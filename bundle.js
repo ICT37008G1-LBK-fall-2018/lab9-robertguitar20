@@ -1,19 +1,97 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-"use strict";
+const axios = require("axios");
 
-var axios = require('axios'); //მაგალითები
+let form = document.querySelector("#mainForm"),
+  formInput = form.querySelector('input[type="number"]');
 
+form.addEventListener("submit", submitForm);
 
-fetch('https://jsonplaceholder.typicode.com/todos/1').then(function (response) {
-  return response.json();
-}).then(function (json) {
-  return console.log(json);
-});
-axios.get('https://jsonplaceholder.typicode.com/todos/1').then(function (response) {
-  console.log(response.data);
-}).catch(function (error) {
-  console.log(error);
-});
+///////________________  1 davaleba ________________///////
+function submitForm(e) {
+  e.preventDefault();
+
+  let id = formInput.value;
+
+  if (id !== "") {
+    fetch(`https://jsonplaceholder.typicode.com/posts?userId=${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (document.querySelector("table")) {
+          document.querySelector("table").remove();
+        }
+        return makeTable(data, true);
+      })
+      .then(_ => {
+        document
+          .querySelectorAll(".viewComment")
+          .forEach(el => el.addEventListener("click", getComments));
+      });
+  }
+}
+
+///////________________  2 davaleba ________________///////
+function getComments(e) {
+  let btn = e.target,
+    id = btn.getAttribute("data-id"),
+    tr = btn.parentNode.parentNode;
+  isActive(tr);
+
+  if (id) {
+    axios
+      .get(`https://jsonplaceholder.typicode.com/comments?postId=${id}`)
+      .then(res => {
+        if (document.querySelectorAll("table")[1]) {
+          document.querySelectorAll("table")[1].remove();
+        }
+        return makeTable(res.data);
+      });
+  }
+}
+
+function isActive(currElem) {
+  document.querySelectorAll("tr").forEach(elems => {
+    return elems === currElem
+      ? currElem.classList.add("active")
+      : elems.classList.remove("active");
+  });
+}
+
+function makeTable(arr, hasBtn) {
+  if (Array.isArray(arr) && arr.length !== 0) {
+    let table = document.createElement("table"),
+      trHead = document.createElement("tr");
+    thTitle = Object.keys(arr[0]).filter(
+      el => el !== "id" && !el.endsWith("Id")
+    );
+
+    if (hasBtn) thTitle.push("Actions");
+
+    // Table head
+    thTitle.forEach(title => {
+      trHead.innerHTML += `<th>${title}</th>`;
+      table.append(trHead);
+    });
+    // Table Body
+    arr.forEach(el => {
+      let _tr = document.createElement("tr");
+      table.append(_tr);
+
+      for (let k in el) {
+        if (thTitle.includes(k)) {
+          _tr.innerHTML += `<td>${el[k]}</td>`;
+        }
+      }
+
+      if (hasBtn)
+        _tr.innerHTML += `<td><button class="viewComment" data-id="${
+          el.id
+        }">კომენტარების დათვალიერება
+</button></td>`;
+    });
+
+    return document.body.appendChild(table);
+  }
+}
 
 },{"axios":2}],2:[function(require,module,exports){
 module.exports = require('./lib/axios');
